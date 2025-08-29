@@ -110,11 +110,13 @@ void NanoG2UltraSensorManager::loop()
   }
 }
 
-int NanoG2UltraSensorManager::getNumSettings() const { return 1; } // just one supported: "gps" (power switch)
+int NanoG2UltraSensorManager::getNumSettings() const { return 2; } // GPS and BLE buzzer settings
 
 const char *NanoG2UltraSensorManager::getSettingName(int i) const
 {
-  return i == 0 ? "gps" : NULL;
+  if (i == 0) return "gps";
+  if (i == 1) return "ble_buzzer";
+  return NULL;
 }
 
 const char *NanoG2UltraSensorManager::getSettingValue(int i) const
@@ -122,6 +124,10 @@ const char *NanoG2UltraSensorManager::getSettingValue(int i) const
   if (i == 0)
   {
     return gps_active ? "1" : "0";
+  }
+  if (i == 1)
+  {
+    return ble_buzzer_enabled ? "1" : "0";
   }
   return NULL;
 }
@@ -138,6 +144,11 @@ bool NanoG2UltraSensorManager::setSettingValue(const char *name, const char *val
     {
       start_gps();
     }
+    return true;
+  }
+  if (strcmp(name, "ble_buzzer") == 0)
+  {
+    ble_buzzer_enabled = (strcmp(value, "1") == 0);
     return true;
   }
   return false; // not supported

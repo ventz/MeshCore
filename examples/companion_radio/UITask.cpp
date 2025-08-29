@@ -4,8 +4,9 @@
 #include "NodePrefs.h"
 #include "MyMesh.h"
 
-#define AUTO_OFF_MILLIS     15000   // 15 seconds
+#define AUTO_OFF_MILLIS     20000   // Increased from 15s to 20s for better UX
 #define BOOT_SCREEN_MILLIS   3000   // 3 seconds
+#define DISPLAY_REFRESH_INTERVAL_MS  2000  // Increased from 1000ms to 2000ms to save power
 
 #ifdef PIN_STATUS_LED
 #define LED_ON_MILLIS     20
@@ -91,9 +92,18 @@ void UITask::begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* no
 
 void UITask::soundBuzzer(UIEventType bet) {
 #if defined(PIN_BUZZER)
-  // Check if buzzer should be disabled while BLE is connected
-  if (_connected && _node_prefs && _node_prefs->buzzer_ble_enabled == BUZZER_BLE_DISABLE) {
-    return;  // Skip buzzer when BLE is connected and buzzer_ble_enabled is disabled
+  // Check if buzzer should be disabled while BLE is connected using SensorManager
+  if (_connected && _sensors) {
+    // Check if SensorManager supports ble_buzzer setting
+    int num = _sensors->getNumSettings();
+    for (int i = 0; i < num; i++) {
+      if (strcmp(_sensors->getSettingName(i), "ble_buzzer") == 0) {
+        if (strcmp(_sensors->getSettingValue(i), "0") == 0) {
+          return;  // Skip buzzer when BLE is connected and ble_buzzer is disabled
+        }
+        break;
+      }
+    }
   }
   
   switch(bet){
@@ -332,7 +342,7 @@ void UITask::loop() {
       renderCurrScreen();
       _display->endFrame();
 
-      _next_refresh = millis() + 1000;   // refresh every second
+      _next_refresh = millis() + DISPLAY_REFRESH_INTERVAL_MS;   // refresh at optimized interval
     }
     if (millis() > _auto_off) {
       _display->turnOff();
@@ -406,23 +416,31 @@ void UITask::handleButtonTriplePress() {
 
 void UITask::handleButtonQuadruplePress() {
   MESH_DEBUG_PRINTLN("UITask: quad press triggered");
-  // Toggle buzzer BLE enabled/disabled
-  #ifdef PIN_BUZZER
-    if (_node_prefs->buzzer_ble_enabled == BUZZER_BLE_ENABLE) {
-      _node_prefs->buzzer_ble_enabled = BUZZER_BLE_DISABLE;
-      sprintf(_alert, "BLE Buzzer: OFF");
-    } else {
-      _node_prefs->buzzer_ble_enabled = BUZZER_BLE_ENABLE;
-      soundBuzzer(UIEventType::ack);
-      sprintf(_alert, "BLE Buzzer: ON");
+  
+  if (_sensors != NULL) {
+    // Look for ble_buzzer setting first, then GPS as fallback
+    int num = _sensors->getNumSettings();
+    bool found_ble_buzzer = false;
+    
+    for (int i = 0; i < num; i++) {
+      if (strcmp(_sensors->getSettingName(i), "ble_buzzer") == 0) {
+        found_ble_buzzer = true;
+        if (strcmp(_sensors->getSettingValue(i), "1") == 0) {
+          _sensors->setSettingValue("ble_buzzer", "0");
+          sprintf(_alert, "BLE Buzzer: OFF");
+        } else {
+          _sensors->setSettingValue("ble_buzzer", "1");
+          #ifdef PIN_BUZZER
+            soundBuzzer(UIEventType::ack);
+          #endif
+          sprintf(_alert, "BLE Buzzer: ON");
+        }
+        break;
+      }
     }
-    // Save the preference change
-    the_mesh.saveNodePrefs();
-    _need_refresh = true;
-  #else
-    if (_sensors != NULL) {
-      // toggle GPS on/off (fallback for devices without buzzer)
-      int num = _sensors->getNumSettings();
+    
+    // Fallback to GPS if no ble_buzzer setting found
+    if (!found_ble_buzzer) {
       for (int i = 0; i < num; i++) {
         if (strcmp(_sensors->getSettingName(i), "gps") == 0) {
           if (strcmp(_sensors->getSettingValue(i), "1") == 0) {
@@ -437,7 +455,7 @@ void UITask::handleButtonQuadruplePress() {
       }
     }
     _need_refresh = true;
-  #endif
+  }
 }
 
 void UITask::handleButtonLongPress() {

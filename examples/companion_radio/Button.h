@@ -7,7 +7,7 @@
 #define BUTTON_DEBOUNCE_TIME_MS    50      // Debounce time in ms
 #define BUTTON_CLICK_TIMEOUT_MS    500     // Max time between clicks for multi-click
 #define BUTTON_LONG_PRESS_TIME_MS  3000    // Time to trigger long press (3 seconds)
-#define BUTTON_READ_INTERVAL_MS    10      // How often to read the button
+#define BUTTON_READ_INTERVAL_MS    25      // Increased from 10ms to 25ms to reduce BLE interference
 
 class Button {
 public:

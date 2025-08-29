@@ -14,6 +14,7 @@
 
 class NanoG2UltraSensorManager : public SensorManager {
   bool gps_active = false;
+  bool ble_buzzer_enabled = true;
   LocationProvider *_location;
 
   void start_gps();
@@ -28,6 +29,9 @@ public:
   const char *getSettingName(int i) const override;
   const char *getSettingValue(int i) const override;
   bool setSettingValue(const char *name, const char *value) override;
+  
+  // Companion radio specific accessor
+  bool isBLEBuzzerEnabled() const { return ble_buzzer_enabled; }
 };
 
 extern NanoG2Ultra board;

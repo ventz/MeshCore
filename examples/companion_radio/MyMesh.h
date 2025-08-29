@@ -62,7 +62,7 @@
 #endif
 
 #ifndef OFFLINE_QUEUE_SIZE
-#define OFFLINE_QUEUE_SIZE 16
+#define OFFLINE_QUEUE_SIZE 8  // Reduced from 16 to save ~2KB RAM
 #endif
 
 #ifndef BLE_NAME_PREFIX

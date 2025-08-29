@@ -79,7 +79,7 @@
 #define FLOOD_SEND_TIMEOUT_FACTOR       16.0f
 #define DIRECT_SEND_PERHOP_FACTOR       6.0f
 #define DIRECT_SEND_PERHOP_EXTRA_MILLIS 250
-#define LAZY_CONTACTS_WRITE_DELAY       5000
+#define LAZY_CONTACTS_WRITE_DELAY       10000  // Increased from 5s to 10s to reduce storage wear
 
 #define PUBLIC_GROUP_PSK                "izOH6cXN6mrJ5e26oRXNcg=="
 
