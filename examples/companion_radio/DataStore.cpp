@@ -166,6 +166,7 @@ void DataStore::loadPrefsInt(const char *filename, NodePrefs& _prefs, double& no
     file.read((uint8_t *)&_prefs.multi_acks, sizeof(_prefs.multi_acks));                   // 77
     file.read(pad, 2);                                                                     // 78
     file.read((uint8_t *)&_prefs.ble_pin, sizeof(_prefs.ble_pin));                         // 80
+    file.read((uint8_t *)&_prefs.buzzer_ble_enabled, sizeof(_prefs.buzzer_ble_enabled));   // 84
 
     file.close();
   }
@@ -197,6 +198,7 @@ void DataStore::savePrefs(const NodePrefs& _prefs, double node_lat, double node_
     file.write((uint8_t *)&_prefs.multi_acks, sizeof(_prefs.multi_acks));                   // 77
     file.write(pad, 2);                                                                     // 78
     file.write((uint8_t *)&_prefs.ble_pin, sizeof(_prefs.ble_pin));                         // 80
+    file.write((uint8_t *)&_prefs.buzzer_ble_enabled, sizeof(_prefs.buzzer_ble_enabled));   // 84
 
     file.close();
   }

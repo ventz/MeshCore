@@ -336,9 +336,8 @@ void MyMesh::queueMessage(const ContactInfo &from, uint8_t txt_type, mesh::Packe
   bool should_display = txt_type == TXT_TYPE_PLAIN || txt_type == TXT_TYPE_SIGNED_PLAIN;
   if (should_display) {
     ui_task.newMsg(path_len, from.name, text, offline_queue_len);
-    if (!_serial->isConnected()) {
-      ui_task.soundBuzzer(UIEventType::contactMessage);
-    }
+    // Always try to sound buzzer - let soundBuzzer() handle BLE connection logic
+    ui_task.soundBuzzer(UIEventType::contactMessage);
   }
 #endif
 }
@@ -394,11 +393,12 @@ void MyMesh::onChannelMessageRecv(const mesh::GroupChannel &channel, mesh::Packe
     uint8_t frame[1];
     frame[0] = PUSH_CODE_MSG_WAITING; // send push 'tickle'
     _serial->writeFrame(frame, 1);
-  } else {
-#ifdef DISPLAY_CLASS
-    ui_task.soundBuzzer(UIEventType::channelMessage);
-#endif
   }
+  
+#ifdef DISPLAY_CLASS
+  // Always try to sound buzzer for channel messages - let soundBuzzer() handle BLE connection logic
+  ui_task.soundBuzzer(UIEventType::channelMessage);
+#endif
 #ifdef DISPLAY_CLASS
   // Get the channel name from the channel index
   const char *channel_name = "Unknown";
@@ -601,6 +601,7 @@ MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMe
   _prefs.bw = LORA_BW;
   _prefs.cr = LORA_CR;
   _prefs.tx_power_dbm = LORA_TX_POWER;
+  _prefs.buzzer_ble_enabled = BUZZER_BLE_ENABLE; // default: buzzer enabled even with BLE
   //_prefs.rx_delay_base = 10.0f;  enable once new algo fixed
 }
 
@@ -638,6 +639,11 @@ void MyMesh::begin(bool has_display) {
   _prefs.sf = constrain(_prefs.sf, 7, 12);
   _prefs.cr = constrain(_prefs.cr, 5, 8);
   _prefs.tx_power_dbm = constrain(_prefs.tx_power_dbm, 1, MAX_LORA_TX_POWER);
+  
+  // sanitise new buzzer_ble_enabled field (in case old prefs file doesn't have it)
+  if (_prefs.buzzer_ble_enabled != BUZZER_BLE_DISABLE && _prefs.buzzer_ble_enabled != BUZZER_BLE_ENABLE) {
+    _prefs.buzzer_ble_enabled = BUZZER_BLE_ENABLE; // default to enabled
+  }
 
 #ifdef BLE_PIN_CODE // 123456 by default
   if (_prefs.ble_pin == 0) {
@@ -1570,4 +1576,8 @@ bool MyMesh::advert() {
   } else {
     return false;
   }
+}
+
+void MyMesh::saveNodePrefs() {
+  savePrefs();
 }

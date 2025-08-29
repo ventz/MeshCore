@@ -92,6 +92,7 @@ public:
   void handleCmdFrame(size_t len);
   bool advert();
   void enterCLIRescue();
+  void saveNodePrefs();  // Public method to save preferences
 
 protected:
   float getAirtimeBudgetFactor() const override;

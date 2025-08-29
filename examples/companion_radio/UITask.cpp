@@ -91,23 +91,28 @@ void UITask::begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* no
 
 void UITask::soundBuzzer(UIEventType bet) {
 #if defined(PIN_BUZZER)
-switch(bet){
-  case UIEventType::contactMessage:
-    // gemini's pick
-    buzzer.play("MsgRcv3:d=4,o=6,b=200:32e,32g,32b,16c7");
-    break;
-  case UIEventType::channelMessage:
-    buzzer.play("kerplop:d=16,o=6,b=120:32g#,32c#");
-    break;
-  case UIEventType::ack:
-    buzzer.play("ack:d=32,o=8,b=120:c");
-    break;
-  case UIEventType::roomMessage:
-  case UIEventType::newContactMessage:
-  case UIEventType::none:
-  default:
-    break;
-}
+  // Check if buzzer should be disabled while BLE is connected
+  if (_connected && _node_prefs && _node_prefs->buzzer_ble_enabled == BUZZER_BLE_DISABLE) {
+    return;  // Skip buzzer when BLE is connected and buzzer_ble_enabled is disabled
+  }
+  
+  switch(bet){
+    case UIEventType::contactMessage:
+      // gemini's pick
+      buzzer.play("MsgRcv3:d=4,o=6,b=200:32e,32g,32b,16c7");
+      break;
+    case UIEventType::channelMessage:
+      buzzer.play("kerplop:d=16,o=6,b=120:32g#,32c#");
+      break;
+    case UIEventType::ack:
+      buzzer.play("ack:d=32,o=8,b=120:c");
+      break;
+    case UIEventType::roomMessage:
+    case UIEventType::newContactMessage:
+    case UIEventType::none:
+    default:
+      break;
+  }
 #endif
 //  Serial.print("DBG:  Buzzzzzz -> ");
 //  Serial.println((int) bet);
@@ -401,25 +406,38 @@ void UITask::handleButtonTriplePress() {
 
 void UITask::handleButtonQuadruplePress() {
   MESH_DEBUG_PRINTLN("UITask: quad press triggered");
-  if (_sensors != NULL) {
-    // toggle GPS onn/off
-    int num = _sensors->getNumSettings();
-    for (int i = 0; i < num; i++) {
-      if (strcmp(_sensors->getSettingName(i), "gps") == 0) {
-        if (strcmp(_sensors->getSettingValue(i), "1") == 0) {
-          _sensors->setSettingValue("gps", "0");
-          soundBuzzer(UIEventType::ack);
-          sprintf(_alert, "GPS: Disabled");
-        } else {
-          _sensors->setSettingValue("gps", "1");
-          soundBuzzer(UIEventType::ack);
-          sprintf(_alert, "GPS: Enabled");
+  // Toggle buzzer BLE enabled/disabled
+  #ifdef PIN_BUZZER
+    if (_node_prefs->buzzer_ble_enabled == BUZZER_BLE_ENABLE) {
+      _node_prefs->buzzer_ble_enabled = BUZZER_BLE_DISABLE;
+      sprintf(_alert, "BLE Buzzer: OFF");
+    } else {
+      _node_prefs->buzzer_ble_enabled = BUZZER_BLE_ENABLE;
+      soundBuzzer(UIEventType::ack);
+      sprintf(_alert, "BLE Buzzer: ON");
+    }
+    // Save the preference change
+    the_mesh.saveNodePrefs();
+    _need_refresh = true;
+  #else
+    if (_sensors != NULL) {
+      // toggle GPS on/off (fallback for devices without buzzer)
+      int num = _sensors->getNumSettings();
+      for (int i = 0; i < num; i++) {
+        if (strcmp(_sensors->getSettingName(i), "gps") == 0) {
+          if (strcmp(_sensors->getSettingValue(i), "1") == 0) {
+            _sensors->setSettingValue("gps", "0");
+            sprintf(_alert, "GPS: Disabled");
+          } else {
+            _sensors->setSettingValue("gps", "1");
+            sprintf(_alert, "GPS: Enabled");
+          }
+          break;
         }
-        break;
       }
     }
-  }
-  _need_refresh = true;
+    _need_refresh = true;
+  #endif
 }
 
 void UITask::handleButtonLongPress() {
