@@ -25,14 +25,6 @@ void setup() {
     Serial.printf("Hardware initialization result: 0x%08X\n", hardware_result);
     Serial.printf("Device name: %s\n", instance.getName());
     
-    // Power cycle keyboard controller for clean state
-    Serial.println("Power cycling keyboard controller...");
-    instance.enableKeyboard(false);
-    delay(200);
-    instance.enableKeyboard(true);
-    delay(200);
-    Serial.println("Keyboard power cycle complete");
-    
     // Check keyboard specifically
     if (hardware_result & HW_KEYBOARD_ONLINE) {
         Serial.println("✅ TCA8418 Keyboard Online - Ready for input!");
@@ -152,14 +144,14 @@ void loop() {
                 // Show ALL key codes to debug space bar and backspace
                 Serial.printf("🔤 RAW KEY: 0x%02X (%d) '%c'\n", key, key, (key >= 32 && key <= 126) ? key : '?');
                 
-                // Handle ALL possible keys
-                if (key == 0x08) { // Backspace
+                // Handle ALL possible keys - try specific key codes for backspace and space
+                if (key == 0x08 || key == 0x7F || key == 0x0E || key == 30) { // Backspace - try TCA8418 code 30
                     if (currentText.length() > 0) {
                         currentText.remove(currentText.length() - 1);
                     }
                     lv_label_set_text(input_label, "⌫ BACKSPACE");
                     Serial.println("✅ BACKSPACE detected!");
-                } else if (key == 0x20) { // Space bar
+                } else if (key == 0x20 || key == 31) { // Space bar - try TCA8418 code 31
                     currentText += " ";
                     lv_label_set_text(input_label, "␣ SPACE");
                     Serial.println("✅ SPACE detected!");
@@ -199,9 +191,9 @@ void loop() {
                 }
                 
                 // Update recent keys for all keys
-                if (key == 0x08) {
+                if (key == 0x08 || key == 0x7F || key == 0x0E || key == 30) {
                     lastKeys += "⌫";
-                } else if (key == 0x20) {
+                } else if (key == 0x20 || key == 31) {
                     lastKeys += "␣";
                 } else if (key == 0x0A || key == 0x0D) {
                     lastKeys += "↵";
@@ -218,7 +210,7 @@ void loop() {
                 lv_label_set_text_fmt(keyboard_area, "Recent: %s", lastKeys.c_str());
                 
                 // Haptic feedback for special keys
-                if (hardware_result & HW_DRV_ONLINE && (key == 0x08 || key == 0x20 || key == 0x0A || key == 0x0D)) {
+                if (hardware_result & HW_DRV_ONLINE && (key == 0x08 || key == 0x7F || key == 0x0E || key == 30 || key == 0x20 || key == 31 || key == 0x0A || key == 0x0D)) {
                     instance.feedback();
                 }
             }
