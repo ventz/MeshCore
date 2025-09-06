@@ -4,9 +4,10 @@
 #include "NodePrefs.h"
 #include "MyMesh.h"
 
-#define AUTO_OFF_MILLIS     20000   // Increased from 15s to 20s for better UX
-#define BOOT_SCREEN_MILLIS   3000   // 3 seconds
-#define DISPLAY_REFRESH_INTERVAL_MS  2000  // Increased from 1000ms to 2000ms to save power
+#define AUTO_OFF_MILLIS     25000   // Further increased to 25s for better battery life
+#define BOOT_SCREEN_MILLIS   2500   // Reduced to 2.5 seconds to save power
+#define DISPLAY_REFRESH_INTERVAL_MS  2500  // Further reduced refresh rate to save power
+#define ADAPTIVE_REFRESH_THRESHOLD 10000   // Use slower refresh after 10s of no interaction
 
 #ifdef PIN_STATUS_LED
 #define LED_ON_MILLIS     20

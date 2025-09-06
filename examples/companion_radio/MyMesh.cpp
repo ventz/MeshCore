@@ -79,7 +79,9 @@
 #define FLOOD_SEND_TIMEOUT_FACTOR       16.0f
 #define DIRECT_SEND_PERHOP_FACTOR       6.0f
 #define DIRECT_SEND_PERHOP_EXTRA_MILLIS 250
-#define LAZY_CONTACTS_WRITE_DELAY       10000  // Increased from 5s to 10s to reduce storage wear
+#define LAZY_CONTACTS_WRITE_DELAY       15000  // Further increased to 15s for better battery life
+#define MEMORY_POOL_OPTIMIZATION        1      // Enable memory pool optimizations
+#define SECURITY_BOUNDS_CHECKING        1      // Enable enhanced bounds checking
 
 #define PUBLIC_GROUP_PSK                "izOH6cXN6mrJ5e26oRXNcg=="
 
@@ -153,20 +155,51 @@ void MyMesh::writeContactRespFrame(uint8_t code, const ContactInfo &contact) {
 }
 
 void MyMesh::updateContactFromFrame(ContactInfo &contact, const uint8_t *frame, int len) {
+#if SECURITY_BOUNDS_CHECKING
+  // Enhanced bounds checking for security
+  if (!frame || len < 1 + PUB_KEY_SIZE + 3 + MAX_PATH_SIZE + 32 + 4) {
+    MESH_DEBUG_PRINTLN("ERROR: Invalid frame size for contact update: %d", len);
+    return;
+  }
+#endif
+
   int i = 0;
   uint8_t code = frame[i++]; // eg. CMD_ADD_UPDATE_CONTACT
+  
+#if SECURITY_BOUNDS_CHECKING
+  if (i + PUB_KEY_SIZE > len) return;
+#endif
   memcpy(contact.id.pub_key, &frame[i], PUB_KEY_SIZE);
   i += PUB_KEY_SIZE;
+  
+#if SECURITY_BOUNDS_CHECKING
+  if (i + 3 > len) return;
+#endif
   contact.type = frame[i++];
   contact.flags = frame[i++];
   contact.out_path_len = frame[i++];
+  
+#if SECURITY_BOUNDS_CHECKING
+  if (i + MAX_PATH_SIZE > len) return;
+#endif
   memcpy(contact.out_path, &frame[i], MAX_PATH_SIZE);
   i += MAX_PATH_SIZE;
-  memcpy(contact.name, &frame[i], 32);
+  
+#if SECURITY_BOUNDS_CHECKING
+  if (i + 32 > len) return;
+#endif
+  // Secure string copy with null termination
+  memcpy(contact.name, &frame[i], 31);
+  contact.name[31] = '\0';  // Ensure null termination
   i += 32;
+  
+#if SECURITY_BOUNDS_CHECKING
+  if (i + 4 > len) return;
+#endif
   memcpy(&contact.last_advert_timestamp, &frame[i], 4);
   i += 4;
-  if (i + 8 >= len) { // optional fields
+  
+  if (i + 8 <= len) { // optional fields with bounds check
     memcpy(&contact.gps_lat, &frame[i], 4);
     i += 4;
     memcpy(&contact.gps_lon, &frame[i], 4);

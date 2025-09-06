@@ -16,6 +16,17 @@ class SerialBLEInterface : public BaseSerialInterface, BLESecurityCallbacks, BLE
   uint32_t _pin_code;
   unsigned long _last_write;
   unsigned long adv_restart_time;
+  
+  // Enhanced stability and recovery
+  unsigned long last_connection_time;
+  unsigned long last_disconnect_time;
+  uint8_t connection_failures;
+  uint8_t consecutive_failures;
+  bool connection_recovery_active;
+  unsigned long recovery_start_time;
+  unsigned long last_heartbeat_time;
+  uint32_t total_connections;
+  uint32_t total_disconnections;
 
   struct Frame {
     uint8_t len;
@@ -57,6 +68,17 @@ public:
     _isEnabled = false;
     _last_write = 0;
     send_queue_len = recv_queue_len = 0;
+    
+    // Initialize stability tracking
+    last_connection_time = 0;
+    last_disconnect_time = 0;
+    connection_failures = 0;
+    consecutive_failures = 0;
+    connection_recovery_active = false;
+    recovery_start_time = 0;
+    last_heartbeat_time = 0;
+    total_connections = 0;
+    total_disconnections = 0;
   }
 
   void begin(const char* device_name, uint32_t pin_code);

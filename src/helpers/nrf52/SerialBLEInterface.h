@@ -8,6 +8,18 @@ class SerialBLEInterface : public BaseSerialInterface {
   bool _isEnabled;
   bool _isDeviceConnected;
   unsigned long _last_write;
+  
+  // Enhanced stability and recovery for nRF52
+  unsigned long last_connection_time;
+  unsigned long last_disconnect_time;
+  uint8_t connection_failures;
+  uint8_t consecutive_failures;
+  bool connection_recovery_active;
+  unsigned long recovery_start_time;
+  unsigned long last_heartbeat_time;
+  uint32_t total_connections;
+  uint32_t total_disconnections;
+  unsigned long adv_restart_time;
 
   struct Frame {
     uint8_t len;
@@ -28,6 +40,18 @@ public:
     _isDeviceConnected = false;
     _last_write = 0;
     send_queue_len = 0;
+    
+    // Initialize stability tracking
+    last_connection_time = 0;
+    last_disconnect_time = 0;
+    connection_failures = 0;
+    consecutive_failures = 0;
+    connection_recovery_active = false;
+    recovery_start_time = 0;
+    last_heartbeat_time = 0;
+    total_connections = 0;
+    total_disconnections = 0;
+    adv_restart_time = 0;
   }
 
   void startAdv();

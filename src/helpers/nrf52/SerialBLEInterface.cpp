@@ -1,5 +1,13 @@
 #include "SerialBLEInterface.h"
 
+// Enhanced stability constants for nRF52
+#define MAX_CONNECTION_FAILURES  5     // Max consecutive failures before extended recovery
+#define RECOVERY_DELAY_BASE     5000   // Base recovery delay in milliseconds  
+#define RECOVERY_DELAY_MAX     30000   // Maximum recovery delay
+#define HEARTBEAT_INTERVAL     10000   // Connection health check interval
+#define CONNECTION_TIMEOUT     45000   // Consider connection dead after this time
+#define ADVERT_RESTART_DELAY    2000   // Default restart delay
+
 static SerialBLEInterface* instance;
 
 void SerialBLEInterface::onConnect(uint16_t connection_handle) {

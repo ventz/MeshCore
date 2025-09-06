@@ -62,8 +62,13 @@
 #endif
 
 #ifndef OFFLINE_QUEUE_SIZE
-#define OFFLINE_QUEUE_SIZE 8  // Reduced from 16 to save ~2KB RAM
+#define OFFLINE_QUEUE_SIZE 6  // Further reduced from 8 to save more RAM
 #endif
+
+// Enhanced memory management
+#define ENABLE_BUFFER_POOLING 1
+#define REDUCED_STRING_OPERATIONS 1
+#define OPTIMIZED_CONTACT_SEARCH 1
 
 #ifndef BLE_NAME_PREFIX
 #define BLE_NAME_PREFIX "MeshCore-"
